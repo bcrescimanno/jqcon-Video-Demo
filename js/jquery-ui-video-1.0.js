@@ -46,6 +46,7 @@ $.widget("ui.video", {
 		this._addPlayButton();
 		this._addPlayhead();
 		this._addFullScreen();
+		this.controlBar.hide();
 	},
 	
 	_renderControlBar : function() {
@@ -55,7 +56,6 @@ $.widget("ui.video", {
 			css : {
 				height: this.options.controlsHeight + "px",
 				width: this.options.width - 30 + "px",
-				top: this.options.height - this.options.controlsHeight + "px"
 			}
 		});
 		this.element.after(this.controlBar);
@@ -63,7 +63,7 @@ $.widget("ui.video", {
 			my: "center bottom",
 			at: "center bottom",
 			of: this.element,
-			offset: "0 -10"
+			offset: "0 -20"
 		})
 	},
 	
@@ -158,7 +158,15 @@ $.widget("ui.video", {
 				at: "right", 
 				of: "#testing",
 				offset: "-10 0"
-			});
+			})
+			.bind("click", $.proxy(function(){
+				try {
+					this.video.webkitEnterFullscreen();
+				} catch (e) {
+					alert("Your browser does not support full screen mode");
+				}
+					
+			}, this));
 	},
 	
 	_addEventListeners : function() {
@@ -178,6 +186,14 @@ $.widget("ui.video", {
 			.bind("durationchange", $.proxy(function() {
 				this.playhead.slider.slider("option", "min", 0);
 				this.playhead.slider.slider("option", "max", this.video.duration);
+			}, this));
+		
+		this.element.parent()
+			.bind("mouseenter", $.proxy(function() {
+				this.controlBar.show("drop", {direction: "down"})
+			}, this))
+			.bind("mouseleave", $.proxy(function() {
+				this.controlBar.hide("drop", {direction: "down"})
 			}, this))
 	}
 });
