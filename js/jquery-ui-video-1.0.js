@@ -9,18 +9,30 @@ $.widget("ui.video", {
 	options : {
 		height: null,
 		width: null,
-		controlsHeight: 40
+		controlsHeight: 50,
+		controlsHorizontalInset : 30,
+		controlsVerticalInset : 20,
+		buttonInset: 10,
+		controlsDuration: 5000
 	},
 	
 	EL_STRING : "<div></div>",
+	
+	Alignment : {
+		TOP: "top",
+		CENTER: "center",
+		BOTTOM: "bottom",
+		LEFT: "left",
+		RIGHT: "right"
+	},
 	
 	_create : function() {
 		if(!this.element) return null;
 		this.buttons = {};
 		
 		this._getDimensions();
+		this.buttonSize = this._calculateButtonSize();
 		this._renderControls();
-		this.element.removeAttr("controls");
 		this.video = this.element[0];
 		this._addEventListeners();
 		this.playing = false;
@@ -41,6 +53,10 @@ $.widget("ui.video", {
 		}
 	},
 	
+	_calculateButtonSize : function() {
+		return this.options.controlsHeight - (this.options.buttonInset * 2);
+	},
+	
 	_renderControls : function() {
 		this._renderControlBar();
 		this._addPlayButton();
@@ -51,26 +67,26 @@ $.widget("ui.video", {
 	
 	_renderControlBar : function() {
 		this.controlBar = $(this.EL_STRING, {
-			id : "testing",
 			"class" : "ui-widget ui-widget-content ui-corner-all",
 			css : {
 				height: this.options.controlsHeight + "px",
-				width: this.options.width - 30 + "px",
+				width: this.options.width - this.options.controlsHorizontalInset + "px",
 			}
-		});
-		this.element.after(this.controlBar);
-		this.controlBar.position({
-			my: "center bottom",
-			at: "center bottom",
-			of: this.element,
-			offset: "0 -20"
 		})
+		.insertAfter(this.element)
+		.position({
+			my: this.Alignment.CENTER + " " + this.Alignment.BOTTOM,
+			at: this.Alignment.CENTER + " " + this.Alignment.BOTTOM,
+			of: this.element,
+			offset: "0 " + -this.options.controlsVerticalInset
+		});
 	},
 	
 	_addPlayButton : function() {
 		this.buttons["play"] = $(this.EL_STRING)
 			.css({
-				height: "28px",
+				height: this.buttonSize + "px",
+				width: this.buttonSize + "px"
 			})
 			.appendTo(this.controlBar)
 			.button({
@@ -80,71 +96,59 @@ $.widget("ui.video", {
 				text: false
 			})
 			.position({
-				my: "left",
-				at: "left", 
-				of: "#testing",
-				offset: "10 0"
-			})
-			.click($.proxy(function(e){
-				if(this.video.paused) {
-					this.video.play();
-				} else {
-					this.video.pause();
-				}
-			}, this));
+				my: this.Alignment.LEFT,
+				at: this.Alignment.LEFT, 
+				of: this.controlBar,
+				offset: this.options.buttonInset + " 0"
+			});
 	},
 	
 	_addPlayhead : function() {
 		this.playhead = {};
+		
+		var containerWidth = this.controlBar.width() - (this.options.buttonInset * 4) - (this.buttonSize * 2);
+		var containerLeftOffset = this.buttonSize + (this.options.buttonInset * 2);
+		
 		this.playhead.container = $(this.EL_STRING, { "class" : "ui-state-default ui-button ui-corner-all" })
 							.css({
-								width: "510px",
-								height: "28px",
+								width: containerWidth + "px",
+								height: this.buttonSize + "px",
 							})
 							.appendTo(this.controlBar)
 							.position({
-								my: "left",
-								at: "left", 
-								of: "#testing",
-								offset: "50 0"
+								my: this.Alignment.LEFT,
+								at: this.Alignment.LEFT, 
+								of: this.controlBar,
+								offset: containerLeftOffset + " 0"
 							});
 							
 		this.playhead.slider = $(this.EL_STRING)
-			.css("width", this.playhead.container.width() - 20 + "px")
+			.css({
+				width: this.playhead.container.width() - (this.options.buttonInset * 2) + "px",
+				height: this.playhead.container.height() - (this.options.buttonInset * 2) + "px"
+			})
 			.slider({
 				range: "min"
 			})
 			.appendTo(this.playhead.container)
 			.position({
-				my: "left",
-				at: "left",
+				my: this.Alignment.LEFT,
+				at: this.Alignment.LEFT,
 				of: this.playhead.container,
-				offset: "10 0"
-			})
-			.bind("slidechange", $.proxy(function(event, ui) {
-				if(event.originalEvent) {
-					this.video.currentTime = this.playhead.slider.slider("option", "value");
-				}
-			}, this))
-			.bind("slidestart", $.proxy(function(event, ui) {
-				if(this.playing) {
-					this.wasPlaying = true;
-					this.video.pause();
-				}
-			}, this))
-			.bind("slidestop", $.proxy(function(event, ui) {
-				if(this.wasPlaying) {
-					this.video.play();
-					this.wasPlaying = false;
-				}
-			}, this))
+				offset: this.options.buttonInset + " 0"
+			});
+			
+		$(".ui-slider-handle", this.playhead.slider).css({
+			height: Math.ceil(this.playhead.slider.height() * 1.3) + "px"
+		});
 	},
 	
 	
 	_addFullScreen : function() {
 		this.buttons["fullscreen"] = $(this.EL_STRING)
 			.css({
-				height: "28px",
+				height: this.buttonSize + "px",
+				width: this.buttonSize + "px"
 			})
 			.appendTo(this.controlBar)
 			.button({
@@ -154,46 +158,110 @@ $.widget("ui.video", {
 				text: false
 			})
 			.position({
-				my: "right",
-				at: "right", 
-				of: "#testing",
-				offset: "-10 0"
-			})
-			.bind("click", $.proxy(function(){
-				try {
-					this.video.webkitEnterFullscreen();
-				} catch (e) {
-					alert("Your browser does not support full screen mode");
-				}
-					
-			}, this));
+				my: this.Alignment.RIGHT,
+				at: this.Alignment.RIGHT, 
+				of: this.controlBar,
+				offset: -this.options.buttonInset + " 0"
+			});
 	},
 	
 	_addEventListeners : function() {
 		this.element
-			.bind("play", $.proxy(function(){
-				this.buttons.play.button("option", "icons", {primary: "ui-icon-pause"});
-				this.playing = true;
-			}, this))
-			.bind("pause", $.proxy(function(){
-				this.buttons.play.button("option", "icons", {primary: "ui-icon-play"});
-				this.playing = false;
-			}, this))
-			.bind("timeupdate", $.proxy(function() {
-				console.debug("caught timeupdate")
-				this.playhead.slider.slider("option", "value", this.video.currentTime);
-			}, this))
-			.bind("durationchange", $.proxy(function() {
-				this.playhead.slider.slider("option", "min", 0);
-				this.playhead.slider.slider("option", "max", this.video.duration);
-			}, this));
+			.bind("play", $.proxy(this._playHandler, this))
+			.bind("pause", $.proxy(this._pauseHandler, this))
+			.bind("timeupdate", $.proxy(this._timeupdateHandler, this))
+			.bind("durationchange", $.proxy(this._durationchangeHandler, this));
 		
 		this.element.parent()
-			.bind("mouseenter", $.proxy(function() {
-				this.controlBar.show("drop", {direction: "down"})
-			}, this))
-			.bind("mouseleave", $.proxy(function() {
-				this.controlBar.hide("drop", {direction: "down"})
-			}, this))
+			.bind("mouseenter", $.proxy(this._showControls, this))
+			.bind("mouseleave", $.proxy(this._hideControls, this))
+			.bind("touchend", $.proxy(this._showControls, this));
+			
+		this.buttons["fullscreen"]
+			.bind("click", $.proxy(this._fullScreen, this));
+			
+		this.playhead.slider
+			.bind("slidechange", $.proxy(this._slidechangeHandler, this))
+			.bind("slidestart", $.proxy(this._slidestartHandler, this))
+			.bind("slidestop", $.proxy(this._slidestopHandler, this));
+			
+		this.buttons["play"]
+			.bind("click", $.proxy(this._playButtonHandler, this));
+	},
+			
+	_playHandler : function(e) {
+		this.element.removeAttr("controls");
+		this.buttons.play.button("option", "icons", {primary: "ui-icon-pause"});
+		this.playing = true;
+	},
+	
+	_pauseHandler : function(e) {
+		this.buttons.play.button("option", "icons", {primary: "ui-icon-play"});
+		this.playing = false;
+	},
+	
+	_timeupdateHandler : function(e) {
+		this.playhead.slider.slider("option", "value", this.video.currentTime);
+	},
+	
+	_durationchangeHandler : function(e) {
+		this.playhead.slider.slider("option", "min", 0);
+		this.playhead.slider.slider("option", "max", this.video.duration);
+	},
+	
+	_showControls : function() {
+		if(this.controlBar.css("display") == "none") {
+			this.controlBar.show("drop", {direction: "down"})
+		}
+		
+		console.debug("clearing the timeout")
+		clearTimeout(this.controlsTimeout);
+		if(this.playing) {
+			console.debug("setting the timeout to 5 seconds");
+			this.controlsTimeout = setTimeout($.proxy(this._hideControls, this), this.options.controlsDuration);
+		}
+	},
+	
+	_hideControls : function() {
+		if(this.controlBar.css("display") != "none") {
+			this.controlBar.hide("drop", {direction: "down"})
+		}
+	},
+	
+	_fullScreen : function() {
+		try {
+			this.video.webkitEnterFullscreen();
+		} catch (e) {
+			alert("Your browser does not support full screen mode");
+		}
+	},
+	
+	_slidechangeHandler : function(event, ui) {
+		if(event.originalEvent) {
+			this.video.currentTime = ui.value;
+		}
+	},
+	
+	_slidestartHandler : function(event, ui) {
+		if(this.playing) {
+			this.wasPlaying = true;
+			this.video.pause();
+		}
+	},
+	
+	_slidestopHandler : function(event, ui) {
+		if(this.wasPlaying) {
+			this.video.play();
+			this.wasPlaying = false;
+		}
+	},
+	
+	_playButtonHandler : function(e) {
+		if(this.video.paused) {
+			this.video.play();
+		} else {
+			this.video.pause();
+		}
 	}
+
 });
