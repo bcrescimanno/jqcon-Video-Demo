@@ -12,7 +12,7 @@
 	<style>
 		body {
 			font-size: 12px;
-			backgrond: #333;
+			background: #333;
 		}
 		
 		video {
@@ -20,6 +20,8 @@
 			margin: 0;
 			padding: 0;
 		}
+		
+		
 	</style>
  
 </head>
@@ -30,5 +32,13 @@
 	</video>
 	</div>
 	
+	<script src="js/jquery-1.4.2.min.js"></script>
+	<script src="js/jquery-ui-1.8.5.custom.min.js"></script>
+	<script src="js/jquery-ui-video-0.1.js"></script>
+	<script>
+		$(document).ready(function() {
+			$("#videoDemo").video();
+		});
+	</script>
 </body>
 </html>

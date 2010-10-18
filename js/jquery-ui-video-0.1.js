@@ -13,7 +13,7 @@ $.widget("ui.video", {
 		controlsHorizontalInset : 30,
 		controlsVerticalInset : 20,
 		buttonInset: 10,
-		controlsDuration: 5000
+		controlsDuration: 3000
 	},
 	
 	EL_STRING : "<div></div>",
@@ -62,7 +62,6 @@ $.widget("ui.video", {
 		this._addPlayButton();
 		this._addPlayhead();
 		this._addFullScreen();
-		this.controlBar.hide();
 	},
 	
 	_renderControlBar : function() {
@@ -127,7 +126,7 @@ $.widget("ui.video", {
 				width: this.playhead.container.width() - (this.options.buttonInset * 2) + "px",
 				height: "10px"
 			})
-			.progressbar()
+			.progressbar({value: 50})
 			.slider({
 				range: "min"
 			})
@@ -173,127 +172,6 @@ $.widget("ui.video", {
 	},
 	
 	_addEventListeners : function() {
-		this.element
-			.bind("play", $.proxy(this._playHandler, this))
-			.bind("pause", $.proxy(this._pauseHandler, this))
-			.bind("timeupdate", $.proxy(this._timeupdateHandler, this))
-			.bind("durationchange", $.proxy(this._durationchangeHandler, this))
-			.bind("ended", $.proxy(this._showControls, this));
-		
-		this.element.parent()
-			.bind("mouseenter", $.proxy(this._showControls, this))
-			.bind("mouseleave", $.proxy(this._hideControls, this))
-			.bind("touchend", $.proxy(this._showControls, this));
-			
-		this.buttons["fullscreen"]
-			.bind("click", $.proxy(this._fullScreen, this));
-			
-		this.playhead.slider
-			.bind("slidechange", $.proxy(this._slidechangeHandler, this))
-			.bind("slidestart", $.proxy(this._slidestartHandler, this))
-			.bind("slidestop", $.proxy(this._slidestopHandler, this));
-			
-		this.buttons["play"]
-			.bind("click", $.proxy(this._playButtonHandler, this));
 	},
 			
-	_playHandler : function(e) {
-		this.element.removeAttr("controls");
-		this.buttons.play.button("option", "icons", {primary: "ui-icon-pause"});
-		this.playing = true;
-		this._resetControlsHideTimeout();
-		if(!this.hasStarted) {
-			this._showControls();
-			this.hasStarted = true;
-		}
-	},
-	
-	_pauseHandler : function(e) {
-		this.buttons.play.button("option", "icons", {primary: "ui-icon-play"});
-		this.playing = false;
-		this._resetControlsHideTimeout();
-	},
-	
-	_timeupdateHandler : function(e) {
-		this.playhead.slider.slider("option", "value", this.video.currentTime);
-	},
-	
-	_durationchangeHandler : function(e) {
-		this.playhead.slider.slider("option", "min", 0);
-		this.playhead.slider.slider("option", "max", this.video.duration);
-		this._getBuffered();
-	},
-	
-	_getBuffered : function() {
-		var bufferedPercent = Math.ceil(((this.video.buffered.end(0) / this.video.duration) * 100));
-		this.playhead.slider.progressbar("option", "value", bufferedPercent);
-		if(bufferedPercent < 100) {
-			setTimeout($.proxy(this._getBuffered, this), 250);
-		}
-	},
-	
-	_showControls : function() {
-		if(this.controlBar.css("display") == "none") {
-			this.controlBar.show("drop", {direction: "down"})
-		}
-		this._resetControlsHideTimeout();
-	},
-	
-	_hideControls : function() {
-		if(this.controlBar.css("display") != "none") {
-			this.controlBar.hide("drop", {direction: "down"})
-		}
-	},
-	
-	_fullScreen : function() {
-		try {
-			this.video.webkitEnterFullscreen();
-		} catch (e) {
-			$(this.EL_STRING)
-				.text("Sorry, your browser doesn't support full screen! Kudos to them for following the spec; lame as it is!")
-				.dialog();
-		}
-	},
-	
-	_slidechangeHandler : function(event, ui) {
-		if(event.originalEvent) {
-			this.video.currentTime = ui.value;
-		}
-	},
-	
-	_slidestartHandler : function(event, ui) {
-		if(this.playing) {
-			this.wasPlaying = true;
-			this.video.pause();
-		}
-	},
-	
-	_slidestopHandler : function(event, ui) {
-		if(this.wasPlaying) {
-			this.video.play();
-			this.wasPlaying = false;
-		}
-	},
-	
-	_playButtonHandler : function(e) {
-		if(this.video.paused) {
-			this.video.play();
-		} else {
-			this.video.pause();
-		}
-	},
-	
-	loadUrl : function(url) {
-		this.video.pause();
-		this._pauseHandler();
-		this.playhead.slider.progressbar("option", "value", 0);
-		this.playhead.slider.slider("option", "value", 0)
-		this.video.src = url;
-		setTimeout($.proxy(this.finishUrlLoad, this), 100);
-	},
-	
-	finishUrlLoad : function() {
-		this.video.load();
-	}
-
 });
