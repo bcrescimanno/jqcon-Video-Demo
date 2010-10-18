@@ -1,11 +1,11 @@
 /** 
- * jQueryUI-Video 1.0
+ * jQueryUI Video Player Demonstration
  * Copyright 2010 Brian Crescimanno <brian.crescimanno@gmail.com>
  * Distributed under the MIT License
  * http://www.opensource.org/licenses/mit-license.html
  */
 
-$.widget("ui.video", {
+$.widget("jquidemo.video", {
 	options : {
 		height: null,
 		width: null,
